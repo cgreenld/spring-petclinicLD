@@ -7,11 +7,11 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 
-
 import com.launchdarkly.sdk.LDContext;
 import com.launchdarkly.sdk.ContextKind;
 import com.launchdarkly.sdk.server.LDClient;
 import com.launchdarkly.sdk.server.LDConfig;
+import com.launchdarkly.sdk.LDValue;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -61,15 +61,24 @@ public class FeatureFlagService {
 	}
 
 	public LDContext createContextFromRequest(HttpServletRequest request) {
-		return LDContext.create(ContextKind.of("Request"), "org-key-123abc");
+		LDContext context = LDContext.builder("context-key-123abc")
+			.kind(ContextKind.of("Request"))
+			.set("firstName", "Sandy")
+			.set("lastName", "Smith")
+			.set("email", "sandy@example.com")
+			.set("groups", LDValue.buildArray().add("Google").add("Microsoft").build())
+			.build();
+		return context;
 	}
 
-	public LDContext createContextFromRequestAndUser(HttpServletRequest request, String userId, String email, String name) {
-		LDContext multiContext = LDContext.createMulti(
-    		LDContext.create("user-key-123abc").set("email", email).set("name", name),
-    	    LDContext.create(ContextKind.of("Request"), "request-key-123abc")
-		);
-		return multiContext;
+	public LDContext createContextFromRequestAndUser(HttpServletRequest request, String userId, String email,
+			String name) {
+		LDContext c1 = LDContext.builder(userId).name(name).set("email", email).build();
+		LDContext c2 = LDContext.create(ContextKind.of("kind2"), "key2");
+		LDContext c3 = LDContext.create(ContextKind.of("kind3"), "key3");
+
+		LDContext multi1 = LDContext.createMulti(c1, c2, c3);
+		return multi1;
 	}
 
 }
